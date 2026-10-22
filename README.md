@@ -17,6 +17,14 @@ Everything is on **Auto**: the AI picks the genre, style, length, language and a
 
 Extras: per-scene prompts for longer reels, character and location reference image prompts, caption, hashtags, thumbnail and music prompts, history, and download as .txt, .json or .md. If you want control, open **Customize**.
 
+## Better videos: how the scenes are built
+
+- **Each scene is one 8-second clip:** one place, one main action, timed beats (0-3s / 3-6s / 6-8s), no more than 3 characters on screen and no more than 2 short lines of speech, so Veo doesn't rush or mix up the characters.
+- **Continuity:** every scene records its opening and final frames. Scenes marked **➡ Continuous** pick up exactly where the last clip ended (use *Extend* in Flow's Scenebuilder), and **✂ New shot** scenes are cuts.
+- **Fixed looks:** characters, places and props (like a cake or a leaf boat) each get one fixed description that is repeated in every shot.
+- **Quality check:** after the AI writes the story, the app checks every scene (length, speech, number of characters, who's missing, final frames). If something is off, it sends the AI one automatic fix-up pass.
+- **▶ Continue story:** makes Part 2, 3 and so on. It starts exactly on the last frame of the previous part, with the same characters, places and props.
+
 ## Run it: Claude Code CLI (recommended, local, no API key)
 
 Requires [Node.js 18+](https://nodejs.org) and [Claude Code](https://claude.com/claude-code), installed and logged in. Check that `claude` works in a terminal first.
