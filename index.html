@@ -28,18 +28,26 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12p
 input,select,textarea{width:100%;background:var(--elev);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--white);font:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
 textarea{resize:vertical;min-height:70px}
 input:focus,select:focus,textarea:focus{border-color:var(--pink);box-shadow:0 0 0 2px rgba(236,72,153,.25)}
+#keyword{font-size:18px;padding:14px 16px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);background:var(--elev);color:var(--text);border-radius:10px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .btn:hover{border-color:var(--pink);color:var(--white)}
-.btn.primary{width:100%;margin-top:16px;padding:14px;font-size:16px;border:0;background:var(--grad);color:var(--white);border-radius:var(--r-lg);box-shadow:0 8px 24px rgba(219,39,119,.25)}
+.btn.primary{width:100%;margin-top:12px;padding:14px;font-size:16px;border:0;background:var(--grad);color:var(--white);border-radius:var(--r-lg);box-shadow:0 8px 24px rgba(219,39,119,.25)}
 .btn.primary:hover{transform:scale(1.01)}
 .btn.primary:disabled{opacity:.6;cursor:wait;transform:none}
+.btn.grad{border:0;background:var(--grad);color:var(--white)}
 .btn.sm{padding:5px 10px;font-size:12px}
 .chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400}
 .chk input{width:auto}
 .hint{font-size:12px;color:var(--faint);margin-top:4px}
 .status{margin-top:12px;font-size:13px;min-height:20px}
 .status.err{color:var(--red)}.status.ok{color:var(--green)}.status.busy{color:var(--yellow)}
+.fold{margin-top:16px;border:1px solid var(--border-soft);border-radius:var(--r-lg);padding:10px 14px;background:rgba(30,41,59,.4)}
+.fold summary{cursor:pointer;color:var(--text);font-size:14px;font-weight:600;list-style:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::before{content:"▸ ";color:var(--pink-l)}
+.fold[open] summary::before{content:"▾ "}
+.fold summary small{color:var(--faint);font-weight:400}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .empty{text-align:center;color:var(--faint);padding:60px 16px}
 .empty b{display:block;color:var(--muted);font-size:18px;margin-bottom:6px}
@@ -58,10 +66,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--pink);box-shadow:0 0 
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(236,72,153,.15);color:var(--pink-l);margin-right:6px}
 .meta{font-size:13px;color:var(--muted);margin:4px 0}
 .prompt{width:100%;min-height:220px;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--panel);color:#cbd5e1;border-color:var(--border-soft)}
+.prompt.big{min-height:460px}
 .steps{margin:0;padding-left:20px;color:var(--text)}
 .steps li{margin:6px 0}
-.tags{color:var(--pink-l);word-break:break-word}
-details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.qa{background:var(--elev);border:1px solid rgba(236,72,153,.4);border-radius:var(--r-lg);padding:14px;margin-bottom:12px}
+.qa b{color:var(--white)}
+details.raw summary{cursor:pointer;color:var(--muted);font-size:13px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--elev);border:1px solid var(--pink);color:var(--white);padding:10px 16px;border-radius:10px;font-size:14px;transition:transform .2s;z-index:9}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
@@ -71,7 +82,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
   <header>
     <div>
       <h1>Flow Reel Studio</h1>
-      <div class="sub">One click: idea → story → consistent characters → scene-by-scene Google Flow (Veo) prompts.</div>
+      <div class="sub">Type a keyword → get one complete prompt (story, characters, every shot, audio) → paste into Google Flow.</div>
     </div>
     <div class="toolbar" style="margin:0">
       <button class="btn" id="btnHistory">History</button>
@@ -82,130 +93,135 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
 
   <div class="grid">
     <aside class="card">
-      <h2>1. Your reel</h2>
-      <label for="idea">Idea / story</label>
-      <textarea id="idea" rows="4" placeholder="e.g. A poor village boy finds a magical cricket bat that only works when he tells the truth"></textarea>
-      <button class="btn sm" id="btnRandom" style="margin-top:6px">🎲 Random idea</button>
-
-      <label for="chars">Characters (optional, locks their look)</label>
-      <textarea id="chars" rows="3" placeholder="Raju: 10-year-old Indian boy, messy black hair, big brown eyes, faded blue t-shirt with a patch, khaki shorts, barefoot"></textarea>
-
-      <div class="row">
-        <div>
-          <label for="genre">Genre</label>
-          <select id="genre">
-            <option>Emotional story</option><option>Motivational</option><option>Comedy</option>
-            <option>Horror / thriller</option><option>Mythology / devotional</option><option>Kids moral story</option>
-            <option>Fantasy adventure</option><option>Romance</option><option>Sci-fi</option>
-            <option>Product ad</option><option>Documentary / facts</option><option>Vlog / POV</option>
-          </select>
-        </div>
-        <div>
-          <label for="style">Visual style</label>
-          <select id="style">
-            <option>3D Pixar-style animation</option><option>Cinematic photorealistic</option>
-            <option>Anime (Studio Ghibli inspired)</option><option>2D cartoon</option>
-            <option>Claymation stop-motion</option><option>Hyper-real documentary</option>
-            <option>Dark moody noir</option><option>Vintage 35mm film</option><option>Unreal Engine game cinematic</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div>
-          <label for="duration">Length</label>
-          <select id="duration">
-            <option value="16">16 s (2 clips)</option><option value="32" selected>32 s (4 clips)</option>
-            <option value="48">48 s (6 clips)</option><option value="64">64 s (8 clips)</option>
-            <option value="80">80 s (10 clips)</option><option value="120">120 s (15 clips)</option>
-          </select>
-        </div>
-        <div>
-          <label for="aspect">Aspect</label>
-          <select id="aspect">
-            <option value="9:16">9:16 Reel / Shorts</option><option value="16:9">16:9 YouTube</option><option value="1:1">1:1 Square</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div>
-          <label for="speech">Audio</label>
-          <select id="speech">
-            <option value="dialogue">Character dialogue</option>
-            <option value="voiceover">Narrator voice-over</option>
-            <option value="none">No speech (music + SFX)</option>
-          </select>
-        </div>
-        <div>
-          <label for="lang">Speech language</label>
-          <select id="lang">
-            <option>English</option><option>Hindi</option><option>Hinglish</option><option>Spanish</option>
-            <option>Portuguese</option><option>Arabic</option><option>Bengali</option><option>Tamil</option>
-            <option>Telugu</option><option>Marathi</option><option>Urdu</option><option>French</option>
-          </select>
-        </div>
-      </div>
-      <label for="format">Prompt format</label>
-      <select id="format">
-        <option value="text">Structured text (paste into Flow)</option>
-        <option value="json">JSON prompt (Veo JSON style)</option>
-      </select>
-
-      <h2 style="margin-top:22px">2. AI engine</h2>
-      <label for="provider">Provider</label>
-      <select id="provider">
-        <option value="gemini">Google Gemini (API key)</option>
-        <option value="claude">Anthropic Claude (API key)</option>
-        <option value="ollama">Ollama (100% local, no key)</option>
-        <option value="offline">Offline templates (no AI)</option>
-      </select>
-      <div id="keyBox">
-        <label for="apiKey">API key</label>
-        <input id="apiKey" type="password" autocomplete="off" placeholder="Paste your key">
-        <label class="chk"><input type="checkbox" id="rememberKey"> Remember key in this browser</label>
-      </div>
-      <div id="modelBox">
-        <label for="model">Model</label>
-        <input id="model">
-        <div class="hint" id="modelHint"></div>
-      </div>
-
-      <button class="btn primary" id="btnGo">⚡ Generate full reel</button>
+      <label for="keyword" style="margin-top:0">Keyword or idea</label>
+      <input id="keyword" placeholder="e.g. honest farmer, ghost cat, Diwali, robot love" autocomplete="off">
+      <button class="btn sm" id="btnRandom" style="margin-top:6px">🎲 Surprise me</button>
+      <button class="btn primary" id="btnGo">⚡ Create my Flow prompt</button>
       <div class="status" id="status"></div>
+
+      <details class="fold" id="engineFold">
+        <summary>AI engine <small id="engineSummary"></small></summary>
+        <label for="provider">Provider</label>
+        <select id="provider">
+          <option value="claudecli">Claude Code CLI (local, no key)</option>
+          <option value="gemini">Google Gemini (API key)</option>
+          <option value="claude">Anthropic Claude (API key)</option>
+          <option value="ollama">Ollama (100% local, no key)</option>
+          <option value="offline">Offline templates (no AI)</option>
+        </select>
+        <div id="keyBox">
+          <label for="apiKey">API key</label>
+          <input id="apiKey" type="password" autocomplete="off" placeholder="Paste your key">
+          <label class="chk"><input type="checkbox" id="rememberKey" checked> Remember key in this browser</label>
+        </div>
+        <div id="modelBox">
+          <label for="model">Model</label>
+          <input id="model">
+          <div class="hint" id="modelHint"></div>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>Customize <small>(optional, everything is Auto)</small></summary>
+        <label for="chars">Characters / extra details</label>
+        <textarea id="chars" rows="3" placeholder="Leave empty and the AI creates them. Or: Raju: 10-year-old Indian boy, messy black hair, faded blue t-shirt"></textarea>
+        <div class="row">
+          <div>
+            <label for="genre">Genre</label>
+            <select id="genre">
+              <option>Auto</option><option>Emotional story</option><option>Motivational</option><option>Comedy</option>
+              <option>Horror / thriller</option><option>Mythology / devotional</option><option>Kids moral story</option>
+              <option>Fantasy adventure</option><option>Romance</option><option>Sci-fi</option>
+              <option>Product ad</option><option>Documentary / facts</option><option>Vlog / POV</option>
+            </select>
+          </div>
+          <div>
+            <label for="style">Visual style</label>
+            <select id="style">
+              <option>Auto</option><option>3D Pixar-style animation</option><option>Cinematic photorealistic</option>
+              <option>Anime (Studio Ghibli inspired)</option><option>2D cartoon</option>
+              <option>Claymation stop-motion</option><option>Hyper-real documentary</option>
+              <option>Dark moody noir</option><option>Vintage 35mm film</option><option>Unreal Engine game cinematic</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="duration">Length</label>
+            <select id="duration">
+              <option value="auto">Auto</option><option value="8">8 s (1 clip)</option><option value="16">16 s (2 clips)</option>
+              <option value="32">32 s (4 clips)</option><option value="48">48 s (6 clips)</option>
+              <option value="64">64 s (8 clips)</option><option value="80">80 s (10 clips)</option>
+            </select>
+          </div>
+          <div>
+            <label for="aspect">Aspect</label>
+            <select id="aspect">
+              <option value="9:16">9:16 Reel / Shorts</option><option value="16:9">16:9 YouTube</option><option value="1:1">1:1 Square</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="speech">Audio</label>
+            <select id="speech">
+              <option value="auto">Auto</option>
+              <option value="dialogue">Character dialogue</option>
+              <option value="voiceover">Narrator voice-over</option>
+              <option value="none">No speech (music + SFX)</option>
+            </select>
+          </div>
+          <div>
+            <label for="lang">Speech language</label>
+            <select id="lang">
+              <option>Auto</option><option>English</option><option>Hindi</option><option>Hinglish</option><option>Spanish</option>
+              <option>Portuguese</option><option>Arabic</option><option>Bengali</option><option>Tamil</option>
+              <option>Telugu</option><option>Marathi</option><option>Urdu</option><option>French</option>
+            </select>
+          </div>
+        </div>
+        <label for="format">Prompt format</label>
+        <select id="format">
+          <option value="text">Structured text</option>
+          <option value="json">JSON prompt (Veo JSON style)</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="askQ" checked> Ask me questions if the keyword is unclear</label>
+      </details>
     </aside>
 
     <main class="card" id="out">
       <div class="empty" id="empty">
-        <b>Your reel package will appear here</b>
-        Story, character bible, image prompts for reference shots, and one ready-to-paste Flow prompt for every 8-second clip.
+        <b>Your Flow prompt will appear here</b>
+        Just type a keyword and press the button. The AI writes the story, designs the characters and plans every shot.
       </div>
+      <div id="questions" hidden></div>
       <div id="result" hidden>
         <div class="hero" id="hero"></div>
         <div class="toolbar">
-          <button class="btn" data-act="copyAll">📋 Copy all scene prompts</button>
+          <button class="btn grad" data-act="copyOne">📋 Copy Flow prompt</button>
           <button class="btn" data-act="dlTxt">⬇ .txt</button>
           <button class="btn" data-act="dlJson">⬇ .json</button>
           <button class="btn" data-act="dlMd">⬇ .md</button>
         </div>
         <div class="tabs" id="tabs">
-          <button class="tab on" data-tab="scenes">🎬 Scene prompts</button>
+          <button class="tab on" data-tab="one">⚡ Flow prompt</button>
+          <button class="tab" data-tab="scenes">🎬 Per-scene prompts</button>
           <button class="tab" data-tab="cast">🧑 Characters &amp; places</button>
           <button class="tab" data-tab="post">📱 Caption &amp; extras</button>
-          <button class="tab" data-tab="how">✅ How to use in Flow</button>
+          <button class="tab" data-tab="how">✅ How to use</button>
         </div>
-        <div class="pane on" id="pane-scenes"></div>
+        <div class="pane on" id="pane-one"></div>
+        <div class="pane" id="pane-scenes"></div>
         <div class="pane" id="pane-cast"></div>
         <div class="pane" id="pane-post"></div>
         <div class="pane" id="pane-how">
           <ol class="steps">
-            <li>Open <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noopener">Google Flow</a> → New project. Set the aspect ratio to match this reel.</li>
-            <li><b>Make the character references first.</b> Go to <i>Characters &amp; places</i>, copy each <i>reference image prompt</i> and generate it with Flow's image tool (or Imagen / Whisk / Gemini). Save the best image of each character and location.</li>
-            <li>For each scene choose <b>Ingredients to Video</b> (or Frames to Video), add that scene's character + location reference images, then paste the scene prompt.</li>
-            <li>Use the Veo model with audio (Veo 3 / Quality) if you want dialogue and sound effects.</li>
-            <li>Generate 2–4 takes per scene and keep the one with the most consistent face and outfit. If a take drifts, regenerate. Don't edit the character text, it's identical in every prompt on purpose.</li>
-            <li>Add each kept clip to <b>Scenebuilder</b> in order. Use <i>Extend</i> or <i>Jump to</i> when a scene continues straight from the last one.</li>
-            <li>Export, add the caption and hashtags from <i>Caption &amp; extras</i>, and post.</li>
+            <li>Open <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noopener">Google Flow</a> → New project, and set the aspect ratio to match.</li>
+            <li><b>Quick way:</b> copy the <i>Flow prompt</i> and paste it into Text to Video with Veo (audio on). Done.</li>
+            <li><b>If Flow makes only one short clip</b> (Veo renders about 8 seconds per generation), use the <i>Per-scene prompts</i> tab: paste scene 1, then scene 2, and so on. Add them in order in Scenebuilder, or use <i>Extend</i>.</li>
+            <li><b>For the best face consistency</b>, first generate the character images from <i>Characters &amp; places</i>. Then use <i>Ingredients to Video</i> and attach them to each scene.</li>
+            <li>Make 2–4 takes and keep the best. Don't change the character text, because it's the same in every prompt on purpose.</li>
           </ol>
-          <p class="meta">Tip: every prompt is self-contained (style + full character description + location + action + audio + negatives), because Veo does not remember earlier clips.</p>
         </div>
       </div>
     </main>
@@ -217,22 +233,16 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
 const $ = (id) => document.getElementById(id);
 const STORE = { settings: "frs.settings", key: "frs.key.", history: "frs.history" };
 const CLIP_SECONDS = 8;
+const AUTO = "Auto";
+const DEFAULTS = { genre: "Emotional story", style: "3D Pixar-style animation", scenes: 4, speech: "dialogue", lang: "English" };
 const PROVIDERS = {
+  claudecli: { model: "", hint: "Uses your Claude Code login. Run: node server.mjs, then use http://localhost:4747. Model is optional (opus, sonnet…).", key: false },
   gemini: { model: "gemini-2.5-flash", hint: "Free key: aistudio.google.com/apikey. Any Gemini model id works (e.g. gemini-2.5-pro).", key: true },
   claude: { model: "claude-opus-5-5", hint: "Key from console.anthropic.com. Called directly from your browser.", key: true },
   ollama: { model: "llama3.1", hint: "Runs on your PC at localhost:11434. Start Ollama with OLLAMA_ORIGINS=* (see README).", key: false },
-  offline: { model: "", hint: "", key: false }
+  offline: { model: "", hint: "No AI: builds a template you fill in yourself.", key: false }
 };
-const IDEAS = [
-  "A lonely old man feeds a stray dog every morning; one day the dog doesn't come, and the twist melts your heart",
-  "A tiny robot in a junkyard builds a flower out of scrap metal to impress a girl robot",
-  "A village girl secretly practises running at night and wins the district race barefoot",
-  "A ghost in an old haveli is actually scared of the family that just moved in",
-  "A clever crow outsmarts a greedy fox to save the baby birds",
-  "A delivery boy in the rain returns a lost wallet and the owner turns out to be his childhood teacher",
-  "Lord Hanuman's childhood mistake of trying to eat the sun, told for kids",
-  "A cat astronaut lands on a planet made of yarn"
-];
+const IDEAS = ["stray dog", "honest farmer", "ghost cat", "robot love", "village runner girl", "clever crow", "rain delivery boy", "baby Hanuman", "cat astronaut", "grandma's last letter", "Diwali lamp", "lost teddy bear"];
 
 let current = null;
 
@@ -245,18 +255,20 @@ function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.
 async function copy(text) { try { await navigator.clipboard.writeText(text); } catch { const ta = el("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } toast("Copied"); }
 function download(name, text, type) { const a = el("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
 function slug(s) { return String(s || "reel").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "reel"; }
+function tc(sec) { return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`; }
 
 function readSettings() {
-  const duration = Number($("duration").value);
+  const d = $("duration").value;
   return {
-    idea: $("idea").value.trim(), chars: $("chars").value.trim(), genre: $("genre").value, style: $("style").value,
-    duration, scenes: Math.round(duration / CLIP_SECONDS), aspect: $("aspect").value, speech: $("speech").value,
-    lang: $("lang").value, format: $("format").value, provider: $("provider").value, model: $("model").value.trim()
+    idea: $("keyword").value.trim(), chars: $("chars").value.trim(), genre: $("genre").value, style: $("style").value,
+    duration: d, scenes: d === "auto" ? null : Math.round(Number(d) / CLIP_SECONDS), aspect: $("aspect").value, speech: $("speech").value,
+    lang: $("lang").value, format: $("format").value, ask: $("askQ").checked, provider: $("provider").value, model: $("model").value.trim() || PROVIDERS[$("provider").value].model
   };
 }
 function applySettings(s) {
-  ["idea", "chars", "genre", "style", "aspect", "speech", "lang", "format", "provider"].forEach((k) => { if (s[k] != null) $(k).value = s[k]; });
-  if (s.duration) $("duration").value = String(s.duration);
+  const map = { keyword: s.idea, chars: s.chars, genre: s.genre, style: s.style, duration: s.duration, aspect: s.aspect, speech: s.speech, lang: s.lang, format: s.format, provider: s.provider };
+  Object.entries(map).forEach(([id, v]) => { if (v != null && v !== "") { $(id).value = String(v); if ($(id).tagName === "SELECT" && $(id).selectedIndex < 0) $(id).selectedIndex = 0; } });
+  if (s.ask != null) $("askQ").checked = s.ask;
   onProvider(s.models);
 }
 function persistSettings() {
@@ -264,47 +276,77 @@ function persistSettings() {
   const all = load(STORE.settings, {});
   s.models = { ...(all.models || {}), [s.provider]: s.model };
   save(STORE.settings, s);
-  if ($("rememberKey").checked && $("apiKey").value) save(STORE.key + s.provider, $("apiKey").value);
-  else localStorage.removeItem(STORE.key + s.provider);
+  try {
+    if ($("rememberKey").checked && $("apiKey").value) save(STORE.key + s.provider, $("apiKey").value);
+    else localStorage.removeItem(STORE.key + s.provider);
+  } catch {}
 }
 function onProvider(models) {
   const p = $("provider").value, cfg = PROVIDERS[p];
   const saved = models || load(STORE.settings, {}).models || {};
   $("keyBox").hidden = !cfg.key;
   $("modelBox").hidden = p === "offline";
-  $("model").value = saved[p] || cfg.model;
+  $("model").value = saved[p] ?? cfg.model;
+  $("model").placeholder = p === "claudecli" ? "default" : "";
   $("modelHint").textContent = cfg.hint;
   const k = load(STORE.key + p, "");
-  $("apiKey").value = k; $("rememberKey").checked = !!k;
+  $("apiKey").value = k;
+  $("engineSummary").textContent = "· " + $("provider").selectedOptions[0].text.split(" (")[0] + (cfg.key && !k ? " · key needed" : "");
+  if (cfg.key && !k) $("engineFold").open = true;
+}
+
+function resolve(s, pkg) {
+  return {
+    ...s,
+    genre: s.genre === AUTO ? pkg.genre || DEFAULTS.genre : s.genre,
+    style: s.style === AUTO ? pkg.style?.visual_style || DEFAULTS.style : s.style,
+    speech: s.speech === "auto" ? (["dialogue", "voiceover", "none"].includes(pkg.audio_mode) ? pkg.audio_mode : DEFAULTS.speech) : s.speech,
+    lang: s.lang === AUTO ? pkg.language || DEFAULTS.lang : s.lang
+  };
 }
 
 const SYSTEM_PROMPT = `You are an award-winning short-form video director and an expert prompt engineer for Google Flow / Veo 3 text-to-video.
-You turn a raw idea into a complete, viral, emotionally strong vertical reel that is produced as a sequence of separate 8-second AI video clips.
+From a single keyword you create a complete, viral, emotionally strong reel, planned as a sequence of 8-second shots.
 
 HARD RULES
 1. Veo has NO memory between clips. Consistency comes only from repeating identical descriptions, so:
-   - Every character gets a "lock": one dense paragraph (45-70 words) with gender, exact age, ethnicity/skin tone, face shape, eyes, eyebrows, nose, hair (colour, length, style), body build, height, the ONE outfit worn in every scene (colours, materials, patterns), shoes, accessories and one unique visual marker. Concrete nouns and colours only, no vague words like "beautiful".
+   - Every character gets a "lock": one dense paragraph (45-70 words) with gender, exact age, ethnicity/skin tone, face shape, eyes, eyebrows, nose, hair (colour, length, style), body build, height, the ONE outfit worn in every scene (colours, materials, patterns), shoes, accessories and one unique visual marker. Concrete nouns and colours only, no vague words like "beautiful". Animals and objects get equally precise locks.
    - Every location gets a "lock" too (architecture, props, colours, time of day, weather, light).
    - Never change outfit, hair or props between scenes unless the story demands it, and then say so explicitly.
-2. Each scene is exactly 8 seconds: one clear main action, one camera move, one shot type. No montage inside a clip.
-3. Scene 1 must hook in the first 2 seconds (motion, mystery or emotion). The story needs a clear arc: hook, setup, conflict, twist or peak, payoff. The last scene ends on a strong emotional beat, loop or call to action.
-4. Dialogue: max ~20 spoken words per scene, short natural lines that fit 8 seconds, written in the requested language (use the native script except for Hinglish, which is Roman script). Name the speaker and their emotion.
-5. Camera language: specify shot type (extreme close-up, close-up, medium, wide, over-the-shoulder, POV, aerial), movement (slow push-in, dolly, tracking, handheld, orbit, crane, static) and lens feel.
-6. Audio for every scene: ambient bed, specific sound effects, music mood. Never ask for on-screen text or subtitles inside the video.
-7. Write "continuity_out": the exact final frame of the scene, so the next scene can start where it ends.
-8. Output ONLY valid JSON, no markdown fences, no commentary.`;
+   - Use as few characters (1-3) and locations (1-2) as the story allows.
+2. Each scene is exactly 8 seconds: one clear main action, one camera move, one shot type.
+3. Scene 1 hooks in the first 2 seconds (motion, mystery or emotion). Clear arc: hook, setup, conflict, twist or peak, payoff. The last scene ends on a strong emotional beat, loop or call to action.
+4. Dialogue: max ~20 spoken words per scene, short natural lines, in the chosen language (native script, except Hinglish which uses Roman script). Name the speaker and emotion.
+5. Camera language: shot type (extreme close-up, close-up, medium, wide, over-the-shoulder, POV, aerial), movement (slow push-in, dolly, tracking, handheld, orbit, crane, static) and lens feel.
+6. Audio for every scene: ambient bed, specific sound effects; one music direction for the whole reel. Never ask for on-screen text or subtitles in the video.
+7. "continuity_out" is the exact final frame of the scene, so the next scene starts where it ends.
+8. When a setting says Auto, you decide what makes the most viral, fitting reel for this keyword.
+9. Output ONLY valid JSON, no markdown fences, no commentary.`;
 
-function userPrompt(s) {
-  const speechRule = { dialogue: `Characters speak dialogue in ${s.lang}.`, voiceover: `A narrator voice-over in ${s.lang} tells the story; characters do not lip-sync (dialogue arrays stay empty).`, none: "No speech at all; dialogue arrays empty and voiceover empty. Tell the story visually with music and sound effects." }[s.speech];
-  return `Create a ${s.duration}-second ${s.genre} reel as exactly ${s.scenes} scenes of 8 seconds each.
-Idea: ${s.idea || "(surprise me with an original, highly shareable idea)"}
-Visual style: ${s.style}. Aspect ratio ${s.aspect}.
-Audio: ${speechRule}
-${s.chars ? "Use these characters and keep their given details exactly, expanding them into full locks:\n" + s.chars : "Invent 1-3 memorable characters (fewer is better for consistency)."}
+function userPrompt(s, answers) {
+  const speech = {
+    auto: `Audio mode: Auto. Choose "dialogue" (characters speak), "voiceover" (narrator) or "none" (music + SFX only), whichever suits the story; language: ${s.lang === AUTO ? "Auto" : s.lang}.`,
+    dialogue: `Audio mode: dialogue. Characters speak in ${s.lang === AUTO ? "the best language for this keyword" : s.lang}.`,
+    voiceover: `Audio mode: voiceover. A narrator tells the story in ${s.lang === AUTO ? "the best language for this keyword" : s.lang}; dialogue arrays stay empty.`,
+    none: "Audio mode: none. No speech at all; dialogue arrays and voiceover empty. Tell the story visually."
+  }[s.speech];
+  const ask = s.ask && !answers
+    ? `\nQUESTIONS: Only if the keyword is truly ambiguous in a way that would change the whole story (for example an unknown person, brand or product name, or a word with very different meanings), return ONLY {"questions":[{"q":"short question","options":["option 1","option 2","option 3"]}]} with at most 3 questions. Otherwise do not ask; just create the reel.`
+    : "\nDo not ask questions; create the reel now.";
+  return `Keyword / idea: ${s.idea || "(surprise me with an original, highly shareable idea)"}
+${answers ? "My answers to your questions:\n" + answers.map((a) => `- ${a.q} → ${a.a}`).join("\n") + "\n" : ""}${s.chars ? "Use these details/characters and keep them exactly, expanding characters into full locks:\n" + s.chars + "\n" : ""}
+Genre: ${s.genre === AUTO ? "Auto (choose the best fit)" : s.genre}
+Visual style: ${s.style === AUTO ? "Auto (choose the best fit, e.g. 3D Pixar-style animation for kids/animals/fables, cinematic photorealistic for drama)" : s.style}
+Length: ${s.scenes ? `exactly ${s.scenes} scene(s) of 8 seconds` : "Auto (choose 3 to 6 scenes of 8 seconds)"}
+Aspect ratio: ${s.aspect}
+${speech}
+Language when Auto: English, unless the keyword is written in another language/script or clearly targets an audience that speaks one (for Indian/desi topics prefer Hindi or Hinglish).
+${ask}
 
 Return JSON with this exact shape:
 {
  "title": "", "logline": "", "hook": "first 2 seconds in one line",
+ "genre": "", "language": "", "audio_mode": "dialogue|voiceover|none",
  "style": {"visual_style": "", "color_palette": "", "lighting": "", "camera_and_lens": "", "texture_and_render": "", "mood": "", "music": "music style and instruments for the whole reel"},
  "characters": [{"id": "C1", "name": "", "role": "", "lock": "45-70 word fixed visual description", "voice": "voice age, tone, accent, pace"}],
  "locations": [{"id": "L1", "name": "", "lock": "fixed visual description of the place"}],
@@ -320,13 +362,13 @@ function parseJson(text) {
   return JSON.parse(clean.slice(start, end + 1));
 }
 
-async function callGemini(s, key) {
+async function callGemini(s, key, prompt) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.model)}:generateContent?key=${encodeURIComponent(key)}`;
   const res = await fetch(url, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt(s) }] }],
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: "application/json", temperature: 0.9, maxOutputTokens: 16000 }
     })
   });
@@ -337,7 +379,7 @@ async function callGemini(s, key) {
   return parseJson(text);
 }
 
-async function callClaude(s, key) {
+async function callClaude(s, key, prompt) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -347,24 +389,34 @@ async function callClaude(s, key) {
     body: JSON.stringify({
       model: s.model, max_tokens: 16000, system: SYSTEM_PROMPT, fallbacks: "default",
       output_config: { effort: "medium" },
-      messages: [{ role: "user", content: userPrompt(s) }]
+      messages: [{ role: "user", content: prompt }]
     })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || `Claude error ${res.status}`);
   if (data.stop_reason === "refusal") throw new Error("Claude declined this idea. Try rephrasing it.");
-  const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-  if (data.stop_reason === "max_tokens") throw new Error("Answer was cut off. Pick fewer clips and try again.");
-  return parseJson(text);
+  if (data.stop_reason === "max_tokens") throw new Error("Answer was cut off. Pick a shorter length and try again.");
+  return parseJson((data.content || []).filter((b) => b.type === "text").map((b) => b.text).join(""));
 }
 
-async function callOllama(s) {
+async function callClaudeCli(s, prompt) {
+  if (!location.protocol.startsWith("http")) throw new Error("Claude Code CLI needs the local server: run  node server.mjs  in this folder, then use http://localhost:4747");
+  let res;
+  try {
+    res = await fetch("/api/claude", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ system: SYSTEM_PROMPT, prompt, model: s.model }) });
+  } catch { throw new Error("Local server is not running. Start it with: node server.mjs"); }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+  return parseJson(data.text);
+}
+
+async function callOllama(s, prompt) {
   let res;
   try {
     res = await fetch("http://localhost:11434/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: s.model, stream: false, format: "json", options: { temperature: 0.9, num_ctx: 16384 },
-        messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: userPrompt(s) }] })
+        messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: prompt }] })
     });
   } catch { throw new Error("Can't reach Ollama on localhost:11434. Start it with OLLAMA_ORIGINS=* ollama serve"); }
   const data = await res.json();
@@ -373,40 +425,41 @@ async function callOllama(s) {
 }
 
 function offlinePackage(s) {
-  const beats = ["hook", "setup", "conflict", "twist", "payoff", "cta"];
-  const pickBeat = (i) => i === 0 ? "hook" : i === s.scenes - 1 ? "payoff" : beats[1 + Math.min(3, Math.floor((i / (s.scenes - 1)) * 4))];
+  const r = resolve(s, {});
+  const n = s.scenes || DEFAULTS.scenes;
+  const beats = ["hook", "setup", "conflict", "twist", "payoff"];
+  const pickBeat = (i) => n === 1 ? "hook" : i === 0 ? "hook" : i === n - 1 ? "payoff" : beats[1 + Math.min(2, Math.floor((i / (n - 1)) * 3))];
   const lines = s.chars ? s.chars.split(/\n+/).filter(Boolean) : ["Hero: young adult, warm brown skin, oval face, expressive dark brown eyes, thick eyebrows, short wavy black hair, slim athletic build, mustard-yellow hoodie, dark blue jeans, white sneakers, small silver pendant, a tiny scar above the left eyebrow"];
   const characters = lines.slice(0, 3).map((l, i) => {
     const [name, ...rest] = l.split(":");
     return { id: "C" + (i + 1), name: rest.length ? name.trim() : "Character " + (i + 1), role: i ? "supporting" : "main", lock: (rest.length ? rest.join(":") : l).trim(), voice: "natural, expressive" };
   });
-  const idea = s.idea || "an unexpected act of kindness changes a stranger's day";
+  const idea = s.idea || "an unexpected act of kindness";
   const actions = {
-    hook: "Open on an intriguing close-up moment that raises a question about: " + idea,
-    setup: "Establish the character's everyday world and what they want, connected to: " + idea,
+    hook: "Open on an intriguing close-up moment that raises a question about " + idea,
+    setup: "Establish the character's everyday world and what they want, connected to " + idea,
     conflict: "The problem hits: an obstacle blocks the character, tension rises",
     twist: "An unexpected reveal changes everything",
-    payoff: "Emotional resolution; the character's face shows relief and joy, satisfying ending",
-    cta: "Character looks to camera with a warm smile, inviting viewers to share"
+    payoff: "Emotional resolution; the character's face shows relief and joy, satisfying ending"
   };
   const shots = ["close-up", "wide shot", "medium shot", "over-the-shoulder", "low-angle medium", "wide shot"];
   const cams = ["slow push-in", "gentle dolly right", "handheld follow", "tracking", "slow orbit", "crane up"];
   return {
-    title: idea.slice(0, 60), logline: idea, hook: actions.hook,
-    style: { visual_style: s.style, color_palette: "rich, cohesive palette", lighting: "soft cinematic key light with warm rim light", camera_and_lens: "35mm cinematic lens, shallow depth of field", texture_and_render: "high detail, smooth motion", mood: s.genre, music: "emotional cinematic score matching the genre" },
+    title: idea.slice(0, 60), logline: idea, hook: actions.hook, genre: r.genre, language: r.lang, audio_mode: r.speech,
+    style: { visual_style: r.style, color_palette: "rich, cohesive palette", lighting: "soft cinematic key light with warm rim light", camera_and_lens: "35mm cinematic lens, shallow depth of field", texture_and_render: "high detail, smooth motion", mood: r.genre, music: "emotional cinematic score matching the genre" },
     characters,
     locations: [{ id: "L1", name: "Main location", lock: "describe the main setting here with fixed colours, props, time of day and weather" }],
-    scenes: Array.from({ length: s.scenes }, (_, i) => {
+    scenes: Array.from({ length: n }, (_, i) => {
       const beat = pickBeat(i);
-      return { n: i + 1, title: beat[0].toUpperCase() + beat.slice(1), beat, location_id: "L1", character_ids: characters.map((c) => c.id), shot: shots[i % shots.length], camera: cams[i % cams.length], action: actions[beat], expression: "clear readable emotion", dialogue: s.speech === "dialogue" ? [{ character_id: characters[0].id, emotion: "sincere", line: "(write a short line in " + s.lang + ")" }] : [], voiceover: s.speech === "voiceover" ? "(write a short narration line in " + s.lang + ")" : "", sfx: "matching sound effects", ambient: "natural ambience", continuity_out: "hold on the character's face" };
+      return { n: i + 1, title: beat[0].toUpperCase() + beat.slice(1), beat, location_id: "L1", character_ids: characters.map((c) => c.id), shot: shots[i % shots.length], camera: cams[i % cams.length], action: actions[beat], expression: "clear readable emotion", dialogue: r.speech === "dialogue" ? [{ character_id: characters[0].id, emotion: "sincere", line: "(write a short line in " + r.lang + ")" }] : [], voiceover: r.speech === "voiceover" ? "(write a short narration line in " + r.lang + ")" : "", sfx: "matching sound effects", ambient: "natural ambience", continuity_out: "hold on the character's face" };
     }),
-    caption: idea + " ❤️", hashtags: ["#reels", "#aivideo", "#googleflow", "#veo3", "#story"], thumbnail_prompt: "Dramatic close-up of the main character, " + s.style, cta: "Follow for part 2"
+    caption: idea + " ❤️", hashtags: ["#reels", "#aivideo", "#googleflow", "#veo3", "#story"], thumbnail_prompt: "Dramatic close-up of the main character, " + r.style, cta: "Follow for part 2"
   };
 }
 
-const NEGATIVE = "no on-screen text, no subtitles, no captions, no watermark, no logo, no extra fingers or limbs, no face morphing, no change of outfit or hairstyle, no new characters, no jump cuts inside the clip";
+const NEGATIVE = "no on-screen text, no subtitles, no captions, no watermark, no logo, no extra fingers or limbs, no face morphing, no change of outfit or hairstyle, no new characters";
 
-function sceneParts(pkg, sc, s) {
+function sceneParts(pkg, sc) {
   const chars = (sc.character_ids || []).map((id) => pkg.characters.find((c) => c.id === id)).filter(Boolean);
   const loc = pkg.locations.find((l) => l.id === sc.location_id) || pkg.locations[0];
   const prev = pkg.scenes[pkg.scenes.indexOf(sc) - 1];
@@ -416,47 +469,82 @@ function sceneParts(pkg, sc, s) {
   });
   return { chars, loc, prev, dialogue };
 }
-
-function composeText(pkg, sc, s) {
-  const { chars, loc, prev, dialogue } = sceneParts(pkg, sc, s);
+function styleLine(pkg) {
   const st = pkg.style || {};
+  return [st.visual_style, st.texture_and_render, st.color_palette, st.lighting, st.camera_and_lens, st.mood && "mood: " + st.mood].filter(Boolean).join(". ");
+}
+function audioLine(sc, pkg, r) {
+  return [sc.ambient && "ambience: " + sc.ambient, sc.sfx && "SFX: " + sc.sfx, pkg.style?.music && "music: " + pkg.style.music].filter(Boolean).join("; ") + (r.speech === "none" ? "; no speech" : "");
+}
+function endDot(s) { return String(s || "").trim().replace(/([^.!?])$/, "$1."); }
+
+function composeOneText(pkg, r) {
+  const total = pkg.scenes.length * CLIP_SECONDS;
   const out = [];
-  out.push(`SCENE ${sc.n}/${pkg.scenes.length}: ${sc.title || ""} (${CLIP_SECONDS} seconds, ${s.aspect} ${s.aspect === "9:16" ? "vertical" : ""} video)`.replace(/\s+\)/, ")"));
-  out.push(`STYLE: ${[st.visual_style, st.texture_and_render, st.color_palette, st.lighting, st.camera_and_lens, st.mood && "mood: " + st.mood].filter(Boolean).join(". ")}.`);
+  out.push(`Create a ${total}-second ${r.aspect}${r.aspect === "9:16" ? " vertical" : ""} ${r.genre} video titled "${pkg.title}". ${endDot(pkg.logline)}`);
+  out.push(`STYLE: ${endDot(styleLine(pkg))}`);
+  if (pkg.characters.length) out.push("CHARACTERS (exactly the same face, hair and outfit in every shot):\n" + pkg.characters.map((c) => `- ${c.name}: ${endDot(c.lock)}${r.speech === "dialogue" && c.voice ? " Voice: " + c.voice + "." : ""}`).join("\n"));
+  if (pkg.locations.length) out.push("LOCATIONS:\n" + pkg.locations.map((l) => `- ${l.name}: ${endDot(l.lock)}`).join("\n"));
+  out.push("SHOT LIST:\n" + pkg.scenes.map((sc, i) => {
+    const { chars, loc, dialogue } = sceneParts(pkg, sc);
+    const parts = [`[${tc(i * CLIP_SECONDS)}–${tc((i + 1) * CLIP_SECONDS)}] ${sc.title || "Scene " + sc.n}.`];
+    parts.push(`${loc ? loc.name + ". " : ""}${chars.length ? chars.map((c) => c.name).join(" & ") + ". " : ""}${sc.shot}, ${sc.camera}.`);
+    parts.push(endDot(sc.action));
+    if (sc.expression) parts.push(endDot(sc.expression));
+    dialogue.forEach((d) => parts.push(`${d.speaker} (${d.emotion || "speaking"}, lip-synced, ${r.lang}): "${d.line}"`));
+    if (sc.voiceover) parts.push(`Narrator (${r.lang}): "${sc.voiceover}"`);
+    const a = [sc.ambient, sc.sfx].filter(Boolean).join(", ");
+    if (a) parts.push(`Sound: ${endDot(a)}`);
+    return parts.join(" ");
+  }).join("\n"));
+  if (pkg.style?.music) out.push(`MUSIC: ${endDot(pkg.style.music)}`);
+  out.push(`AVOID: ${NEGATIVE}.`);
+  return out.join("\n\n");
+}
+function composeOneJson(pkg, r) {
+  return JSON.stringify({
+    title: pkg.title, duration_seconds: pkg.scenes.length * CLIP_SECONDS, aspect_ratio: r.aspect, genre: r.genre, language: r.lang, story: pkg.logline,
+    style: pkg.style,
+    characters: pkg.characters.map((c) => ({ name: c.name, appearance: c.lock, voice: c.voice, keep_identical: true })),
+    locations: pkg.locations.map((l) => ({ name: l.name, description: l.lock })),
+    shots: pkg.scenes.map((sc, i) => {
+      const { chars, loc, dialogue } = sceneParts(pkg, sc);
+      return { time: `${tc(i * CLIP_SECONDS)}-${tc((i + 1) * CLIP_SECONDS)}`, title: sc.title, location: loc?.name, characters: chars.map((c) => c.name), shot: sc.shot, camera: sc.camera, action: sc.action, expression: sc.expression,
+        dialogue: dialogue.length ? dialogue.map((d) => ({ speaker: d.speaker, emotion: d.emotion, line: d.line })) : undefined, voiceover: sc.voiceover || undefined, sound: [sc.ambient, sc.sfx].filter(Boolean).join(", ") };
+    }),
+    music: pkg.style?.music, negative: NEGATIVE
+  }, null, 2);
+}
+
+function composeScene(pkg, sc, r) {
+  const { chars, loc, prev, dialogue } = sceneParts(pkg, sc);
+  if (r.format === "json") {
+    return JSON.stringify({
+      scene: `${sc.n}/${pkg.scenes.length} - ${sc.title || ""}`, duration_seconds: CLIP_SECONDS, aspect_ratio: r.aspect, style: pkg.style,
+      characters: chars.map((c) => ({ name: c.name, appearance: c.lock, voice: c.voice })),
+      location: loc ? { name: loc.name, description: loc.lock } : undefined, starts_from: prev?.continuity_out || undefined,
+      shot: sc.shot, camera: sc.camera, action: sc.action, expression: sc.expression,
+      dialogue: dialogue.length ? dialogue.map((d) => ({ speaker: d.speaker, emotion: d.emotion, language: r.lang, line: d.line, lip_sync: true })) : undefined,
+      voiceover: sc.voiceover ? { language: r.lang, text: sc.voiceover } : undefined,
+      audio: { ambience: sc.ambient, sfx: sc.sfx, music: pkg.style?.music }, ends_on: sc.continuity_out, negative: NEGATIVE
+    }, null, 2);
+  }
+  const out = [`SCENE ${sc.n}/${pkg.scenes.length}: ${sc.title || ""} (${CLIP_SECONDS} seconds, ${r.aspect}${r.aspect === "9:16" ? " vertical" : ""} video)`];
+  out.push(`STYLE: ${endDot(styleLine(pkg))}`);
   if (chars.length) out.push("CHARACTERS (keep exactly the same look):\n" + chars.map((c) => `- ${c.name}: ${c.lock}`).join("\n"));
   if (loc) out.push(`LOCATION: ${loc.name}: ${loc.lock}`);
   if (prev?.continuity_out) out.push(`STARTS FROM: ${prev.continuity_out}`);
   out.push(`SHOT: ${sc.shot}. CAMERA: ${sc.camera}.`);
-  out.push(`ACTION: ${String(sc.action || "").replace(/([^.!?])$/, "$1.")}${sc.expression ? " Expression and body language: " + sc.expression + "." : ""}`);
-  if (dialogue.length) out.push("DIALOGUE (" + s.lang + ", lip-synced):\n" + dialogue.map((d) => `- ${d.speaker} (${[d.emotion, d.voice].filter(Boolean).join(", ")}): "${d.line}"`).join("\n"));
-  if (sc.voiceover) out.push(`VOICE-OVER (${s.lang}, narrator, no lip-sync): "${sc.voiceover}"`);
-  out.push(`AUDIO: ${[sc.ambient && "ambience: " + sc.ambient, sc.sfx && "SFX: " + sc.sfx, st.music && "music: " + st.music].filter(Boolean).join("; ")}${s.speech === "none" ? "; no speech" : ""}.`);
+  out.push(`ACTION: ${endDot(sc.action)}${sc.expression ? " Expression and body language: " + endDot(sc.expression) : ""}`);
+  if (dialogue.length) out.push(`DIALOGUE (${r.lang}, lip-synced):\n` + dialogue.map((d) => `- ${d.speaker} (${[d.emotion, d.voice].filter(Boolean).join(", ")}): "${d.line}"`).join("\n"));
+  if (sc.voiceover) out.push(`VOICE-OVER (${r.lang}, narrator, no lip-sync): "${sc.voiceover}"`);
+  out.push(`AUDIO: ${audioLine(sc, pkg, r)}.`);
   if (sc.continuity_out) out.push(`ENDS ON: ${sc.continuity_out}`);
   out.push(`AVOID: ${NEGATIVE}.`);
   return out.join("\n\n");
 }
-
-function composeJson(pkg, sc, s) {
-  const { chars, loc, prev, dialogue } = sceneParts(pkg, sc, s);
-  const st = pkg.style || {};
-  const obj = {
-    scene: `${sc.n}/${pkg.scenes.length} - ${sc.title || ""}`, duration_seconds: CLIP_SECONDS, aspect_ratio: s.aspect,
-    style: { visual: st.visual_style, render: st.texture_and_render, palette: st.color_palette, lighting: st.lighting, lens: st.camera_and_lens, mood: st.mood },
-    characters: chars.map((c) => ({ name: c.name, appearance: c.lock, voice: c.voice })),
-    location: loc ? { name: loc.name, description: loc.lock } : undefined,
-    starts_from: prev?.continuity_out || undefined,
-    shot: sc.shot, camera: sc.camera, action: sc.action, expression: sc.expression,
-    dialogue: dialogue.length ? dialogue.map((d) => ({ speaker: d.speaker, emotion: d.emotion, language: s.lang, line: d.line, lip_sync: true })) : undefined,
-    voiceover: sc.voiceover ? { language: s.lang, text: sc.voiceover } : undefined,
-    audio: { ambience: sc.ambient, sfx: sc.sfx, music: st.music, speech: s.speech === "none" ? "none" : undefined },
-    ends_on: sc.continuity_out, negative: NEGATIVE
-  };
-  return JSON.stringify(obj, null, 2);
-}
-
-function composeScene(pkg, sc, s) { return s.format === "json" ? composeJson(pkg, sc, s) : composeText(pkg, sc, s); }
-function characterImagePrompt(c, pkg, s) { return `Character reference sheet of ${c.name}: ${c.lock}. Full body front view, side view and close-up of the face, neutral light-grey studio background, even soft lighting, ${pkg.style?.visual_style || s.style}, consistent proportions, no text.`; }
-function locationImagePrompt(l, pkg, s) { return `Establishing shot of ${l.name}: ${l.lock}. ${pkg.style?.visual_style || s.style}, ${pkg.style?.lighting || ""}, ${s.aspect} framing, no people, no text.`; }
+function characterImagePrompt(c, pkg) { return `Character reference sheet of ${c.name}: ${endDot(c.lock)} Full body front view, side view and close-up of the face, neutral light-grey studio background, even soft lighting, ${pkg.style?.visual_style || ""}, consistent proportions, no text.`; }
+function locationImagePrompt(l, pkg, r) { return `Establishing shot of ${l.name}: ${endDot(l.lock)} ${pkg.style?.visual_style || ""}, ${pkg.style?.lighting || ""}, ${r.aspect} framing, no people, no text.`; }
 
 function normalize(pkg) {
   pkg.characters = Array.isArray(pkg.characters) ? pkg.characters : [];
@@ -467,11 +555,11 @@ function normalize(pkg) {
   return pkg;
 }
 
-function promptBlock(title, text, metaHtml) {
+function promptBlock(title, text, metaHtml, big) {
   const box = el("div", "item");
   const h = el("div", "item-h", `<b>${title}</b>`);
   const btn = el("button", "btn sm", "📋 Copy");
-  const ta = el("textarea", "prompt"); ta.value = text;
+  const ta = el("textarea", "prompt" + (big ? " big" : "")); ta.value = text;
   btn.onclick = () => copy(ta.value);
   h.appendChild(btn); box.appendChild(h);
   if (metaHtml) box.appendChild(el("div", "meta", metaHtml));
@@ -480,55 +568,77 @@ function promptBlock(title, text, metaHtml) {
 }
 
 function render() {
-  const { pkg, settings: s } = current;
-  $("empty").hidden = true; $("result").hidden = false;
-  $("hero").innerHTML = `<h3>${esc(pkg.title)}</h3><p>${esc(pkg.logline)}</p><p class="meta">🎣 Hook: ${esc(pkg.hook)} · ${pkg.scenes.length} clips × ${CLIP_SECONDS}s · ${esc(s.style)} · ${esc(s.aspect)}</p>`;
+  const { pkg } = current;
+  const r = current.resolved;
+  $("empty").hidden = true; $("questions").hidden = true; $("result").hidden = false;
+  $("hero").innerHTML = `<h3>${esc(pkg.title)}</h3><p>${esc(pkg.logline)}</p><p class="meta">🎣 ${esc(pkg.hook)} · ${pkg.scenes.length * CLIP_SECONDS}s · ${esc(r.genre)} · ${esc(r.style)} · ${esc(r.lang)} · ${esc(r.aspect)}</p>`;
+
+  const one = $("pane-one"); one.innerHTML = "";
+  const main = promptBlock("⚡ Your complete Google Flow prompt", r.format === "json" ? composeOneJson(pkg, r) : composeOneText(pkg, r), "Copy this and paste it into Flow. If Flow renders only the first shot, use <i>Per-scene prompts</i>.", true);
+  one.appendChild(main.box); current.one = main.ta;
 
   const scenes = $("pane-scenes"); scenes.innerHTML = "";
+  scenes.appendChild(el("p", "meta", "Veo makes about 8 seconds per generation. For a longer reel, paste these one by one and join them in Scenebuilder. Each prompt is self-contained, so the characters stay the same."));
   current.areas = pkg.scenes.map((sc) => {
-    const meta = `<span class="badge">${esc(sc.beat || "")}</span>${esc(sc.action || "")}`;
-    const { box, ta } = promptBlock(`Scene ${sc.n} · ${esc(sc.title || "")}`, composeScene(pkg, sc, s), meta);
+    const { box, ta } = promptBlock(`Scene ${sc.n} · ${esc(sc.title || "")}`, composeScene(pkg, sc, r), `<span class="badge">${esc(sc.beat || "")}</span>${esc(sc.action || "")}`);
     scenes.appendChild(box); return ta;
   });
 
   const cast = $("pane-cast"); cast.innerHTML = "";
-  cast.appendChild(el("p", "meta", "Generate these reference images first, then attach them as <b>Ingredients</b> in Flow for every scene they appear in."));
-  pkg.characters.forEach((c) => cast.appendChild(promptBlock(`🧑 ${esc(c.name)} <span class="badge">${esc(c.role || "")}</span>`, characterImagePrompt(c, pkg, s), `Voice: ${esc(c.voice || "-")}`).box));
-  pkg.locations.forEach((l) => cast.appendChild(promptBlock(`📍 ${esc(l.name)}`, locationImagePrompt(l, pkg, s)).box));
+  cast.appendChild(el("p", "meta", "Optional: generate these images first and attach them as <b>Ingredients</b> in Flow for the most consistent faces."));
+  pkg.characters.forEach((c) => cast.appendChild(promptBlock(`🧑 ${esc(c.name)} <span class="badge">${esc(c.role || "")}</span>`, characterImagePrompt(c, pkg), `Voice: ${esc(c.voice || "-")}`).box));
+  pkg.locations.forEach((l) => cast.appendChild(promptBlock(`📍 ${esc(l.name)}`, locationImagePrompt(l, pkg, r)).box));
 
   const post = $("pane-post"); post.innerHTML = "";
   post.appendChild(promptBlock("Caption + hashtags", `${pkg.caption || ""}\n\n${pkg.cta ? pkg.cta + "\n\n" : ""}${pkg.hashtags.join(" ")}`).box);
-  if (pkg.thumbnail_prompt) post.appendChild(promptBlock("Thumbnail / cover image prompt", `${pkg.thumbnail_prompt}. ${s.aspect} framing, ${s.style}, no text.`).box);
-  if (pkg.style?.music) post.appendChild(promptBlock("Background music prompt (Suno / Lyria / YouTube Audio Library search)", `${pkg.style.music}. Mood: ${pkg.style.mood || s.genre}. Length ${s.duration} seconds.`).box);
-  const raw = el("details"); raw.innerHTML = "<summary>Raw story JSON</summary>";
+  if (pkg.thumbnail_prompt) post.appendChild(promptBlock("Thumbnail / cover image prompt", `${endDot(pkg.thumbnail_prompt)} ${r.aspect} framing, ${r.style}, no text.`).box);
+  if (pkg.style?.music) post.appendChild(promptBlock("Background music prompt", `${endDot(pkg.style.music)} Mood: ${pkg.style.mood || r.genre}. Length ${pkg.scenes.length * CLIP_SECONDS} seconds.`).box);
+  const raw = el("details", "raw"); raw.innerHTML = "<summary>Raw story JSON</summary>";
   const pre = el("textarea", "prompt"); pre.value = JSON.stringify(pkg, null, 2); pre.readOnly = true; raw.appendChild(pre);
   post.appendChild(raw);
+  switchTab("one");
 }
 
-function allPrompts() { return current.areas.map((ta) => ta.value).join("\n\n" + "=".repeat(60) + "\n\n"); }
-function asMarkdown() {
-  const { pkg, settings: s } = current;
-  const md = [`# ${pkg.title}`, `${pkg.logline}`, `**Hook:** ${pkg.hook}`, "## Characters"];
-  pkg.characters.forEach((c) => md.push(`### ${c.name}\n${c.lock}\n\n_Image prompt:_ ${characterImagePrompt(c, pkg, s)}`));
-  md.push("## Locations"); pkg.locations.forEach((l) => md.push(`### ${l.name}\n${l.lock}`));
-  md.push("## Scene prompts"); current.areas.forEach((ta, i) => md.push(`### Scene ${i + 1}\n\`\`\`\n${ta.value}\n\`\`\``));
-  md.push("## Caption", `${pkg.caption}\n\n${pkg.hashtags.join(" ")}`);
-  return md.join("\n\n");
+function showQuestions(qs, s) {
+  const box = $("questions"); box.innerHTML = "";
+  $("empty").hidden = true; $("result").hidden = true; box.hidden = false;
+  box.appendChild(el("div", "hero", "<h3>A few quick questions</h3><p>Pick an option or type your own, then continue. Or skip and let the AI decide.</p>"));
+  const inputs = qs.slice(0, 3).map((q) => {
+    const wrap = el("div", "qa", `<b>${esc(q.q)}</b>`);
+    const input = el("input"); input.value = (q.options || [])[0] || "";
+    const chips = el("div", "chips");
+    (q.options || []).forEach((o) => { const c = el("button", "btn sm", esc(o)); c.onclick = () => { input.value = o; }; chips.appendChild(c); });
+    wrap.append(chips, input); box.appendChild(wrap);
+    return { q: q.q, input };
+  });
+  const bar = el("div", "toolbar");
+  const go = el("button", "btn grad", "Continue →");
+  const skip = el("button", "btn", "Skip, you decide");
+  go.onclick = () => generate(inputs.map((i) => ({ q: i.q, a: i.input.value.trim() || "you decide" })));
+  skip.onclick = () => generate([]);
+  bar.append(go, skip); box.appendChild(bar);
+  setStatus("Answer the questions to continue.", "busy");
 }
 
-async function generate() {
+async function generate(answers) {
   const s = readSettings();
   const key = $("apiKey").value.trim();
-  if (PROVIDERS[s.provider].key && !key) { setStatus("Add your API key, or switch to Ollama / Offline.", "err"); return; }
+  if (PROVIDERS[s.provider].key && !key) { $("engineFold").open = true; setStatus("Paste your API key in AI engine (once), or choose Ollama / Offline.", "err"); $("apiKey").focus(); return; }
   persistSettings();
+  onProvider();
   $("btnGo").disabled = true;
-  setStatus(`Writing your ${s.scenes}-clip reel with ${s.provider === "offline" ? "offline templates" : s.model}… this can take up to a minute.`, "busy");
+  setStatus(`Creating your reel with ${s.provider === "offline" ? "offline templates" : s.model}… this can take up to a minute.`, "busy");
   try {
-    const raw = s.provider === "gemini" ? await callGemini(s, key) : s.provider === "claude" ? await callClaude(s, key) : s.provider === "ollama" ? await callOllama(s) : offlinePackage(s);
-    current = { pkg: normalize(raw), settings: s, at: Date.now() };
+    const askAllowed = s.ask && !answers;
+    const callS = askAllowed ? s : { ...s, ask: false };
+    const p = userPrompt(callS, answers && answers.length ? answers : null);
+    const raw = s.provider === "claudecli" ? await callClaudeCli(s, p) : s.provider === "gemini" ? await callGemini(s, key, p) : s.provider === "claude" ? await callClaude(s, key, p) : s.provider === "ollama" ? await callOllama(s, p) : offlinePackage(s);
+    if (Array.isArray(raw.questions) && raw.questions.length && !Array.isArray(raw.scenes) && askAllowed) { showQuestions(raw.questions, s); return; }
+    const pkg = normalize(raw);
+    current = { pkg, settings: s, resolved: resolve(s, pkg), at: Date.now() };
     render();
-    const hist = load(STORE.history, []); hist.unshift({ pkg: current.pkg, settings: s, at: current.at }); save(STORE.history, hist.slice(0, 20));
-    setStatus(`Done: ${current.pkg.scenes.length} scene prompts ready.`, "ok");
+    const hist = load(STORE.history, []); hist.unshift({ pkg, settings: s, at: current.at }); save(STORE.history, hist.slice(0, 20));
+    setStatus(`Done. Your Flow prompt is ready (${pkg.scenes.length} shots, ${pkg.scenes.length * CLIP_SECONDS}s).`, "ok");
     if (window.innerWidth < 980) $("out").scrollIntoView({ behavior: "smooth" });
   } catch (e) {
     setStatus(e.message || String(e), "err");
@@ -540,17 +650,15 @@ async function generate() {
 function showHistory() {
   const hist = load(STORE.history, []);
   if (!hist.length) { toast("No history yet"); return; }
-  const pane = $("pane-scenes");
-  $("empty").hidden = true; $("result").hidden = false;
-  $("hero").innerHTML = "<h3>History</h3><p>Your last reels in this browser. Click one to open it.</p>";
-  pane.innerHTML = "";
+  const box = $("questions"); box.innerHTML = "";
+  $("empty").hidden = true; $("result").hidden = true; box.hidden = false;
+  box.appendChild(el("div", "hero", "<h3>History</h3><p>Your last reels in this browser. Click one to open it.</p>"));
   hist.forEach((h) => {
-    const b = el("div", "item", `<div class="item-h"><b>${esc(h.pkg.title)}</b><span class="meta">${new Date(h.at).toLocaleString()} · ${h.pkg.scenes.length} clips</span></div><div class="meta">${esc(h.pkg.logline)}</div>`);
+    const b = el("div", "item", `<div class="item-h"><b>${esc(h.pkg.title)}</b><span class="meta">${new Date(h.at).toLocaleString()} · ${h.pkg.scenes.length} shots</span></div><div class="meta">${esc(h.pkg.logline)}</div>`);
     b.style.cursor = "pointer";
-    b.onclick = () => { current = { ...h }; applySettings(h.settings); render(); };
-    pane.appendChild(b);
+    b.onclick = () => { applySettings(h.settings); current = { ...h, resolved: resolve(h.settings, h.pkg) }; render(); };
+    box.appendChild(b);
   });
-  switchTab("scenes");
 }
 
 function switchTab(name) {
@@ -560,17 +668,26 @@ function switchTab(name) {
 
 $("tabs").onclick = (e) => { const t = e.target.closest(".tab"); if (t) switchTab(t.dataset.tab); };
 document.querySelector("#result .toolbar").onclick = (e) => {
-  const act = e.target.closest("[data-act]")?.dataset.act; if (!act || !current?.areas) return;
+  const act = e.target.closest("[data-act]")?.dataset.act; if (!act || !current?.one) return;
   const name = slug(current.pkg.title);
-  if (act === "copyAll") copy(allPrompts());
-  if (act === "dlTxt") download(name + ".txt", allPrompts(), "text/plain");
+  const scenesTxt = current.areas.map((ta) => ta.value).join("\n\n" + "=".repeat(60) + "\n\n");
+  if (act === "copyOne") copy(current.one.value);
+  if (act === "dlTxt") download(name + ".txt", `${current.one.value}\n\n${"#".repeat(60)}\nPER-SCENE PROMPTS\n${"#".repeat(60)}\n\n${scenesTxt}`, "text/plain");
   if (act === "dlJson") download(name + ".json", JSON.stringify({ settings: current.settings, pkg: current.pkg }, null, 2), "application/json");
-  if (act === "dlMd") download(name + ".md", asMarkdown(), "text/markdown");
+  if (act === "dlMd") {
+    const { pkg } = current;
+    const md = [`# ${pkg.title}`, pkg.logline, "## Flow prompt", "```\n" + current.one.value + "\n```", "## Characters"];
+    pkg.characters.forEach((c) => md.push(`### ${c.name}\n${c.lock}\n\n_Image prompt:_ ${characterImagePrompt(c, pkg)}`));
+    md.push("## Per-scene prompts"); current.areas.forEach((ta, i) => md.push(`### Scene ${i + 1}\n\`\`\`\n${ta.value}\n\`\`\``));
+    md.push("## Caption", `${pkg.caption || ""}\n\n${pkg.hashtags.join(" ")}`);
+    download(name + ".md", md.join("\n\n"), "text/markdown");
+  }
 };
-$("btnGo").onclick = generate;
-$("btnRandom").onclick = () => { $("idea").value = IDEAS[Math.floor(Math.random() * IDEAS.length)]; };
+$("btnGo").onclick = () => generate();
+$("keyword").addEventListener("keydown", (e) => { if (e.key === "Enter") generate(); });
+$("btnRandom").onclick = () => { $("keyword").value = IDEAS[Math.floor(Math.random() * IDEAS.length)]; };
 $("provider").onchange = () => onProvider();
-$("format").onchange = () => { if (current?.areas) { current.settings.format = $("format").value; render(); } };
+$("format").onchange = () => { if (current?.one) { current.settings.format = current.resolved.format = $("format").value; render(); } };
 $("btnHistory").onclick = showHistory;
 $("btnImport").onclick = () => $("fileImport").click();
 $("fileImport").onchange = async (e) => {
@@ -579,7 +696,7 @@ $("fileImport").onchange = async (e) => {
     const data = JSON.parse(await f.text());
     const pkg = normalize(data.pkg || data);
     const settings = { ...readSettings(), ...(data.settings || {}) };
-    current = { pkg, settings, at: Date.now() }; applySettings(settings); render(); setStatus("Imported.", "ok");
+    applySettings(settings); current = { pkg, settings, resolved: resolve(settings, pkg), at: Date.now() }; render(); setStatus("Imported.", "ok");
   } catch (err) { setStatus("Import failed: " + err.message, "err"); }
   e.target.value = "";
 };
