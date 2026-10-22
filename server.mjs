@@ -64,6 +64,8 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
       return send(res, 200, await readFile(join(ROOT, "index.html")), "text/html; charset=utf-8");
     }
+    const asset = url.pathname.match(/^\/cast\/([a-z0-9-]+\.jpg)$/);
+    if (req.method === "GET" && asset) return send(res, 200, await readFile(join(ROOT, "cast", asset[1])), "image/jpeg");
     if (req.method === "GET" && url.pathname === "/api/health") return send(res, 200, { ok: true });
     if (req.method === "POST" && url.pathname === "/api/claude") {
       if (!ORIGINS.has(req.headers.origin)) return send(res, 403, { error: "Open the app at http://localhost:" + PORT });

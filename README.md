@@ -7,6 +7,12 @@ Type a **keyword** and click once to get **one complete prompt** you can paste s
 - locations, a timed shot list, dialogue or narration, sound and music
 - a list of things to avoid
 
+## Built-in cast: Fluffy Buddies
+
+Every story stars your own characters, **Kiki, Mochi, Pomu, Pinki and Lulu**. Tap their cards to choose who appears. Their exact look, voice and personality are built into the app, and the same description is pasted into every shot, so they always look the same. They live in one fixed world (*Sunny Clover Meadow*) and one fixed style (3D plush with golden-hour light).
+
+The reference sheets are in [`cast/`](cast/) (`kiki-sheet.jpg` …). Upload them in Flow as **Ingredients** for the best consistency. To add or edit a character, change the `BUDDIES` list in `index.html` and add the matching `cast/<id>.jpg` and `cast/<id>-sheet.jpg` images. Switch *Characters* to "AI creates new characters" to get a fresh cast instead.
+
 Everything is on **Auto**: the AI picks the genre, style, length, language and audio. If a keyword is unclear (for example a brand or person name), it asks you up to 3 quick questions first. You can also skip them.
 
 Extras: per-scene prompts for longer reels, character and location reference image prompts, caption, hashtags, thumbnail and music prompts, history, and download as .txt, .json or .md. If you want control, open **Customize**.

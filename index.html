@@ -73,6 +73,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--pink);box-shadow:0 0 
 .qa{background:var(--elev);border:1px solid rgba(236,72,153,.4);border-radius:var(--r-lg);padding:14px;margin-bottom:12px}
 .qa b{color:var(--white)}
 details.raw summary{cursor:pointer;color:var(--muted);font-size:13px}
+.cast{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.buddy{position:relative;display:block;margin:0;text-transform:none;letter-spacing:0;cursor:pointer;border:2px solid var(--border);border-radius:10px;overflow:hidden;background:var(--elev);transition:border-color .15s,opacity .15s}
+.buddy img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.buddy span{display:block;text-align:center;font-size:12px;font-weight:700;color:var(--white);padding:3px 0}
+.buddy input{position:absolute;opacity:0}
+.buddy:has(input:checked){border-color:var(--pink)}
+.buddy:not(:has(input:checked)){opacity:.4}
+.sheet{display:flex;gap:12px;align-items:flex-start}
+.sheet img{width:96px;border-radius:10px;flex:none}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--elev);border:1px solid var(--pink);color:var(--white);padding:10px 16px;border-radius:10px;font-size:14px;transition:transform .2s;z-index:9}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
@@ -96,6 +105,13 @@ details.raw summary{cursor:pointer;color:var(--muted);font-size:13px}
       <label for="keyword" style="margin-top:0">Keyword or idea</label>
       <input id="keyword" placeholder="e.g. honest farmer, ghost cat, Diwali, robot love" autocomplete="off">
       <button class="btn sm" id="btnRandom" style="margin-top:6px">🎲 Surprise me</button>
+      <label for="castMode">Characters</label>
+      <select id="castMode">
+        <option value="buddies">✨ Fluffy Buddies (my cast)</option>
+        <option value="ai">AI creates new characters</option>
+      </select>
+      <div class="cast" id="castPick"></div>
+      <div class="hint" id="castHint">Tap to choose who's in the story. Their looks stay exactly the same in every story.</div>
       <button class="btn primary" id="btnGo">⚡ Create my Flow prompt</button>
       <div class="status" id="status"></div>
 
@@ -242,6 +258,25 @@ const PROVIDERS = {
   ollama: { model: "llama3.1", hint: "Runs on your PC at localhost:11434. Start Ollama with OLLAMA_ORIGINS=* (see README).", key: false },
   offline: { model: "", hint: "No AI: builds a template you fill in yourself.", key: false }
 };
+const SHARED_BODY = "palm-sized round plush creature, one perfectly round egg-shaped fluffy ball body (head and body are one, no neck), two big glossy black bead eyes with a white sparkle highlight set wide apart, small open smiling mouth with a red-pink inside and a tiny cat-like 'w' upper lip, round soft pink blush cheeks, two short stubby fuzzy arms usually held up near the chest, two small oval feet with darker paw pads, a tiny round pom-pom tail, dense soft felt-like micro-fur";
+const BUDDIES = {
+  style: {
+    visual_style: "Stylized 3D animated plush-toy look like a premium Pixar short film",
+    texture_and_render: "dense soft felted micro-fur with visible fibres and gentle subsurface glow, rounded squishy shapes, tiny-scale macro feel",
+    color_palette: "warm golden yellows, moss greens, creamy whites, soft pinks",
+    lighting: "warm golden-hour sunlight, soft rim light glowing on the fur, dreamy creamy bokeh",
+    camera_and_lens: "macro lens at buddy eye level, shallow depth of field"
+  },
+  world: { id: "L1", name: "Sunny Clover Meadow", lock: "enchanted forest floor at tiny buddy scale: thick green moss carpet, clover leaves, tiny white five-petal flowers with yellow centres, small pink blossoms, a mossy fallen log, huge textured tree trunks in the soft-focus background, sun rays through leaves, floating golden pollen" },
+  chars: [
+    { id: "kiki", name: "Kiki", personality: "sunny, cheerful, bouncy", voice: "bright, giggly, high-pitched", lock: "butter-yellow fur, one tiny pointed tuft on top of the head and two very small round ears, warm brown feet, yellow pom-pom tail" },
+    { id: "mochi", name: "Mochi", personality: "sweet, shy, loves snuggles", voice: "soft, sweet, whispery", lock: "creamy off-white extra-fluffy fur, two tiny rounded nub ears on top of the head, brown feet, cream-white pom-pom tail" },
+    { id: "pomu", name: "Pomu", personality: "gentle, caring big friend who makes everyday moments special", voice: "warm, gentle, slightly deeper and slow", lock: "the biggest buddy, about 1.5 times taller with a tall pear shape, caramel-tan brown fur on the head, back, arms and feet, a large cream-white heart-shaped face mask and belly patch, two small round brown ears, often happy closed crescent eyes, chubby brown paws with dark-brown four-toe paw pads on the feet soles, short brown tail" },
+    { id: "pinki", name: "Pinki", personality: "playful, rosy, full of energy", voice: "bubbly, squeaky, energetic", lock: "pastel rosy-pink fur, several tiny rounded nubs on top of the head, deeper pink blush, light pink feet with dusty-rose pads, pink pom-pom tail" },
+    { id: "lulu", name: "Lulu", personality: "calm, curious, thoughtful", voice: "calm, soft, curious, unhurried", lock: "soft sage matcha-green fur, one tiny pointed nub on top of the head, brown feet, light-green pom-pom tail" }
+  ]
+};
+BUDDIES.chars.forEach((c) => { c.lock = `A ${SHARED_BODY}; ${c.lock}`; c.img = `cast/${c.id}.jpg`; c.sheet = `cast/${c.id}-sheet.jpg`; });
 const IDEAS = ["stray dog", "honest farmer", "ghost cat", "robot love", "village runner girl", "clever crow", "rain delivery boy", "baby Hanuman", "cat astronaut", "grandma's last letter", "Diwali lamp", "lost teddy bear"];
 
 let current = null;
@@ -262,13 +297,17 @@ function readSettings() {
   return {
     idea: $("keyword").value.trim(), chars: $("chars").value.trim(), genre: $("genre").value, style: $("style").value,
     duration: d, scenes: d === "auto" ? null : Math.round(Number(d) / CLIP_SECONDS), aspect: $("aspect").value, speech: $("speech").value,
-    lang: $("lang").value, format: $("format").value, ask: $("askQ").checked, provider: $("provider").value, model: $("model").value.trim() || PROVIDERS[$("provider").value].model
+    lang: $("lang").value, format: $("format").value, ask: $("askQ").checked,
+    cast: $("castMode").value, castIds: [...document.querySelectorAll("#castPick input:checked")].map((i) => i.value), provider: $("provider").value, model: $("model").value.trim() || PROVIDERS[$("provider").value].model
   };
 }
 function applySettings(s) {
   const map = { keyword: s.idea, chars: s.chars, genre: s.genre, style: s.style, duration: s.duration, aspect: s.aspect, speech: s.speech, lang: s.lang, format: s.format, provider: s.provider };
   Object.entries(map).forEach(([id, v]) => { if (v != null && v !== "") { $(id).value = String(v); if ($(id).tagName === "SELECT" && $(id).selectedIndex < 0) $(id).selectedIndex = 0; } });
   if (s.ask != null) $("askQ").checked = s.ask;
+  if (s.cast) $("castMode").value = s.cast;
+  if (Array.isArray(s.castIds)) document.querySelectorAll("#castPick input").forEach((i) => { i.checked = s.castIds.includes(i.value); });
+  onCastMode();
   onProvider(s.models);
 }
 function persistSettings() {
@@ -295,11 +334,28 @@ function onProvider(models) {
   if (cfg.key && !k) $("engineFold").open = true;
 }
 
+function castOf(s) { return s.cast === "buddies" ? BUDDIES.chars.filter((c) => (s.castIds?.length ? s.castIds : BUDDIES.chars.map((b) => b.id)).includes(c.id)) : []; }
+
+function applyCast(pkg, s) {
+  const cast = castOf(s);
+  if (!cast.length) return pkg;
+  const byKey = (x) => cast.find((c) => c.id === String(x).toLowerCase() || c.name.toLowerCase() === String(x).toLowerCase());
+  const roles = {};
+  (pkg.characters || []).forEach((c) => { const b = byKey(c.id) || byKey(c.name); if (b) roles[b.id] = c.role; });
+  pkg.characters = cast.map((c) => ({ id: c.id, name: c.name, role: roles[c.id] || c.personality, lock: c.lock, voice: c.voice, img: c.img, sheet: c.sheet }));
+  pkg.scenes.forEach((sc) => { sc.character_ids = [...new Set((sc.character_ids || []).map((x) => byKey(x)?.id).filter(Boolean))]; });
+  (pkg.scenes || []).forEach((sc) => (sc.dialogue || []).forEach((d) => { d.character_id = byKey(d.character_id)?.id || d.character_id; }));
+  pkg.style = { ...(pkg.style || {}), ...BUDDIES.style };
+  if (!pkg.locations.some((l) => l.id === BUDDIES.world.id)) pkg.locations.unshift({ ...BUDDIES.world });
+  else pkg.locations = pkg.locations.map((l) => (l.id === BUDDIES.world.id ? { ...BUDDIES.world } : l));
+  return pkg;
+}
+
 function resolve(s, pkg) {
   return {
     ...s,
     genre: s.genre === AUTO ? pkg.genre || DEFAULTS.genre : s.genre,
-    style: s.style === AUTO ? pkg.style?.visual_style || DEFAULTS.style : s.style,
+    style: s.cast === "buddies" ? BUDDIES.style.visual_style : s.style === AUTO ? pkg.style?.visual_style || DEFAULTS.style : s.style,
     speech: s.speech === "auto" ? (["dialogue", "voiceover", "none"].includes(pkg.audio_mode) ? pkg.audio_mode : DEFAULTS.speech) : s.speech,
     lang: s.lang === AUTO ? pkg.language || DEFAULTS.lang : s.lang
   };
@@ -323,6 +379,16 @@ HARD RULES
 8. When a setting says Auto, you decide what makes the most viral, fitting reel for this keyword.
 9. Output ONLY valid JSON, no markdown fences, no commentary.`;
 
+function castBrief(s) {
+  const cast = castOf(s);
+  return `FIXED CAST: the story stars ONLY these characters. Do not invent other characters (small props, insects or flowers are fine). Their looks are fixed and added automatically, so in "characters" return only {"id","name","role"} using these exact ids. Every listed character must appear in at least one scene, and character_ids/dialogue must use these ids.
+${cast.map((c) => `- id "${c.id}": ${c.name}, ${c.personality}. Look: ${c.lock.split("; ")[1]}. Voice: ${c.voice}.`).join("\n")}
+All buddies are the same small round size except Pomu, who is bigger.
+${s.chars ? "Extra details from me: " + s.chars + "\n" : ""}FIXED STYLE: ${Object.values(BUDDIES.style).join("; ")}. Ignore the visual style setting below.
+FIXED WORLD: location id "L1" = ${BUDDIES.world.name}: ${BUDDIES.world.lock}. You may add up to 2 more locations, but they must be in the same tiny cosy forest world (e.g. a mushroom house, a pond edge, under a big leaf in the rain).
+`;
+}
+
 function userPrompt(s, answers) {
   const speech = {
     auto: `Audio mode: Auto. Choose "dialogue" (characters speak), "voiceover" (narrator) or "none" (music + SFX only), whichever suits the story; language: ${s.lang === AUTO ? "Auto" : s.lang}.`,
@@ -334,7 +400,7 @@ function userPrompt(s, answers) {
     ? `\nQUESTIONS: Only if the keyword is truly ambiguous in a way that would change the whole story (for example an unknown person, brand or product name, or a word with very different meanings), return ONLY {"questions":[{"q":"short question","options":["option 1","option 2","option 3"]}]} with at most 3 questions. Otherwise do not ask; just create the reel.`
     : "\nDo not ask questions; create the reel now.";
   return `Keyword / idea: ${s.idea || "(surprise me with an original, highly shareable idea)"}
-${answers ? "My answers to your questions:\n" + answers.map((a) => `- ${a.q} → ${a.a}`).join("\n") + "\n" : ""}${s.chars ? "Use these details/characters and keep them exactly, expanding characters into full locks:\n" + s.chars + "\n" : ""}
+${answers ? "My answers to your questions:\n" + answers.map((a) => `- ${a.q} → ${a.a}`).join("\n") + "\n" : ""}${castOf(s).length ? castBrief(s) : s.chars ? "Use these details/characters and keep them exactly, expanding characters into full locks:\n" + s.chars + "\n" : ""}
 Genre: ${s.genre === AUTO ? "Auto (choose the best fit)" : s.genre}
 Visual style: ${s.style === AUTO ? "Auto (choose the best fit, e.g. 3D Pixar-style animation for kids/animals/fables, cinematic photorealistic for drama)" : s.style}
 Length: ${s.scenes ? `exactly ${s.scenes} scene(s) of 8 seconds` : "Auto (choose 3 to 6 scenes of 8 seconds)"}
@@ -429,10 +495,11 @@ function offlinePackage(s) {
   const n = s.scenes || DEFAULTS.scenes;
   const beats = ["hook", "setup", "conflict", "twist", "payoff"];
   const pickBeat = (i) => n === 1 ? "hook" : i === 0 ? "hook" : i === n - 1 ? "payoff" : beats[1 + Math.min(2, Math.floor((i / (n - 1)) * 3))];
-  const lines = s.chars ? s.chars.split(/\n+/).filter(Boolean) : ["Hero: young adult, warm brown skin, oval face, expressive dark brown eyes, thick eyebrows, short wavy black hair, slim athletic build, mustard-yellow hoodie, dark blue jeans, white sneakers, small silver pendant, a tiny scar above the left eyebrow"];
-  const characters = lines.slice(0, 3).map((l, i) => {
+  const roster = castOf(s);
+  const lines = roster.length ? roster.map((c) => c.name + ": x") : s.chars ? s.chars.split(/\n+/).filter(Boolean) : ["Hero: young adult, warm brown skin, oval face, expressive dark brown eyes, thick eyebrows, short wavy black hair, slim athletic build, mustard-yellow hoodie, dark blue jeans, white sneakers, small silver pendant, a tiny scar above the left eyebrow"];
+  const characters = lines.slice(0, roster.length || 3).map((l, i) => {
     const [name, ...rest] = l.split(":");
-    return { id: "C" + (i + 1), name: rest.length ? name.trim() : "Character " + (i + 1), role: i ? "supporting" : "main", lock: (rest.length ? rest.join(":") : l).trim(), voice: "natural, expressive" };
+    return { id: roster[i]?.id || "C" + (i + 1), name: rest.length ? name.trim() : "Character " + (i + 1), role: i ? "supporting" : "main", lock: (rest.length ? rest.join(":") : l).trim(), voice: "natural, expressive" };
   });
   const idea = s.idea || "an unexpected act of kindness";
   const actions = {
@@ -483,7 +550,7 @@ function composeOneText(pkg, r) {
   const out = [];
   out.push(`Create a ${total}-second ${r.aspect}${r.aspect === "9:16" ? " vertical" : ""} ${r.genre} video titled "${pkg.title}". ${endDot(pkg.logline)}`);
   out.push(`STYLE: ${endDot(styleLine(pkg))}`);
-  if (pkg.characters.length) out.push("CHARACTERS (exactly the same face, hair and outfit in every shot):\n" + pkg.characters.map((c) => `- ${c.name}: ${endDot(c.lock)}${r.speech === "dialogue" && c.voice ? " Voice: " + c.voice + "." : ""}`).join("\n"));
+  if (pkg.characters.length) out.push("CHARACTERS (exactly the same look, colours and proportions in every shot):\n" + pkg.characters.map((c) => `- ${c.name}: ${endDot(c.lock)}${r.speech === "dialogue" && c.voice ? " Voice: " + c.voice + "." : ""}`).join("\n"));
   if (pkg.locations.length) out.push("LOCATIONS:\n" + pkg.locations.map((l) => `- ${l.name}: ${endDot(l.lock)}`).join("\n"));
   out.push("SHOT LIST:\n" + pkg.scenes.map((sc, i) => {
     const { chars, loc, dialogue } = sceneParts(pkg, sc);
@@ -586,7 +653,10 @@ function render() {
 
   const cast = $("pane-cast"); cast.innerHTML = "";
   cast.appendChild(el("p", "meta", "Optional: generate these images first and attach them as <b>Ingredients</b> in Flow for the most consistent faces."));
-  pkg.characters.forEach((c) => cast.appendChild(promptBlock(`🧑 ${esc(c.name)} <span class="badge">${esc(c.role || "")}</span>`, characterImagePrompt(c, pkg), `Voice: ${esc(c.voice || "-")}`).box));
+  pkg.characters.forEach((c) => {
+    const meta = c.sheet ? `<div class="sheet"><img src="${esc(c.img)}" alt="${esc(c.name)}"><div>Voice: ${esc(c.voice || "-")}<br>Best: upload <a href="${esc(c.sheet)}" target="_blank" rel="noopener" download>${esc(c.sheet)}</a> as an <b>Ingredient</b> in Flow. The prompt below re-creates the same look if you need it.</div></div>` : `Voice: ${esc(c.voice || "-")}`;
+    cast.appendChild(promptBlock(`🧑 ${esc(c.name)} <span class="badge">${esc(c.role || "")}</span>`, characterImagePrompt(c, pkg), meta).box);
+  });
   pkg.locations.forEach((l) => cast.appendChild(promptBlock(`📍 ${esc(l.name)}`, locationImagePrompt(l, pkg, r)).box));
 
   const post = $("pane-post"); post.innerHTML = "";
@@ -634,7 +704,7 @@ async function generate(answers) {
     const p = userPrompt(callS, answers && answers.length ? answers : null);
     const raw = s.provider === "claudecli" ? await callClaudeCli(s, p) : s.provider === "gemini" ? await callGemini(s, key, p) : s.provider === "claude" ? await callClaude(s, key, p) : s.provider === "ollama" ? await callOllama(s, p) : offlinePackage(s);
     if (Array.isArray(raw.questions) && raw.questions.length && !Array.isArray(raw.scenes) && askAllowed) { showQuestions(raw.questions, s); return; }
-    const pkg = normalize(raw);
+    const pkg = applyCast(normalize(raw), s);
     current = { pkg, settings: s, resolved: resolve(s, pkg), at: Date.now() };
     render();
     const hist = load(STORE.history, []); hist.unshift({ pkg, settings: s, at: current.at }); save(STORE.history, hist.slice(0, 20));
@@ -701,6 +771,14 @@ $("fileImport").onchange = async (e) => {
   e.target.value = "";
 };
 document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); });
+
+function onCastMode() {
+  const on = $("castMode").value === "buddies";
+  $("castPick").hidden = $("castHint").hidden = !on;
+  $("style").disabled = on;
+}
+$("castPick").innerHTML = BUDDIES.chars.map((c) => `<label class="buddy" title="${esc(c.name)}: ${esc(c.personality)}"><input type="checkbox" value="${c.id}" checked><img src="${c.img}" alt="${esc(c.name)}" onerror="this.style.visibility='hidden'"><span>${esc(c.name)}</span></label>`).join("");
+$("castMode").onchange = onCastMode;
 
 applySettings(load(STORE.settings, {}));
 </script>
